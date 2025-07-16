@@ -1,35 +1,116 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useEffect, useState } from "react";
+import "./app.css";
+
+const API_KEY = "def4b21c05244c5f89990e9a717fa98e";
+const CITY_LIST = ["London", "New York", "Tokyo", "Dhaka", "Paris", "Berlin", "Sydney", "Moscow", "Toronto", "Delhi"];
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [weatherData, setWeatherData] = useState([]);
+  const [search, setSearch] = useState("");
+  const [conditionFilter, setConditionFilter] = useState("All");
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      const results = await Promise.all(
+        CITY_LIST.map(async (city) => {
+          try {
+            const res = await fetch(
+              `https://api.weatherbit.io/v2.0/current?city=${city}&key=${API_KEY}`
+            );
+            const json = await res.json();
+            return json.data[0];
+          } catch (error) {
+            console.error("Error fetching city:", city, error);
+            return null;
+          }
+        })
+      );
+      setWeatherData(results.filter(Boolean));
+    };
+
+    fetchWeather();
+  }, []);
+
+  // Filters
+  const filtered = weatherData
+    .filter((w) =>
+      w.city_name.toLowerCase().includes(search.toLowerCase())
+    )
+    .filter((w) =>
+      conditionFilter === "All" ? true : w.weather.description === conditionFilter
+    );
+
+  // Summary Stats
+  const avgTemp =
+    weatherData.length > 0
+      ? (
+          weatherData.reduce((sum, w) => sum + w.temp, 0) /
+          weatherData.length
+        ).toFixed(1)
+      : "N/A";
+
+  const hotCities =
+    weatherData.length > 0
+      ? weatherData.filter((w) => w.temp > 30).length
+      : 0;
+
+  const uniqueConditions =
+    weatherData.length > 0
+      ? [...new Set(weatherData.map((w) => w.weather.description))]
+      : [];
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="container">
+      <h1>🌦 Weather Dashboard</h1>
+
+      <div className="stats">
+        <div>Total Cities: {weatherData.length}</div>
+        <div>Avg Temp: {avgTemp}°C</div>
+        <div>Hot Cities (&gt;30°C): {hotCities}</div>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+
+      <div className="controls">
+        <input
+          type="text"
+          placeholder="Search city..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select
+          value={conditionFilter}
+          onChange={(e) => setConditionFilter(e.target.value)}
+        >
+          <option value="All">All Conditions</option>
+          {uniqueConditions.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+
+      {weatherData.length === 0 ? (
+        <p>Loading weather data...</p>
+      ) : (
+        <div className="list">
+          {filtered.map((w) => (
+            <div className="card" key={w.city_name}>
+              <img
+                src={`https://www.weatherbit.io/static/img/icons/${w.weather.icon}.png`}
+                alt="icon"
+              />
+              <div>
+                <h3>{w.city_name}</h3>
+                <p>{w.weather.description}</p>
+                <p>Temp: {w.temp}°C</p>
+                <p>Humidity: {w.rh}%</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
