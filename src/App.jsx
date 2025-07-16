@@ -8,6 +8,8 @@ function App() {
   const [weatherData, setWeatherData] = useState([]);
   const [search, setSearch] = useState("");
   const [conditionFilter, setConditionFilter] = useState("All");
+  const [minTemp, setMinTemp] = useState("");
+  const [maxTemp, setMaxTemp] = useState("");
 
   useEffect(() => {
     const fetchWeather = async () => {
@@ -38,6 +40,10 @@ function App() {
     )
     .filter((w) =>
       conditionFilter === "All" ? true : w.weather.description === conditionFilter
+    )
+    .filter((w) =>
+      (minTemp === "" || w.temp >= parseFloat(minTemp)) &&
+      (maxTemp === "" || w.temp <= parseFloat(maxTemp))
     );
 
   // Summary Stats
@@ -87,6 +93,18 @@ function App() {
             </option>
           ))}
         </select>
+        <input
+          type="number"
+          placeholder="Min Temp (°C)"
+          value={minTemp}
+          onChange={(e) => setMinTemp(e.target.value)}
+        />
+        <input
+          type="number"
+          placeholder="Max Temp (°C)"
+          value={maxTemp}
+          onChange={(e) => setMaxTemp(e.target.value)}
+        />
       </div>
 
       {weatherData.length === 0 ? (
