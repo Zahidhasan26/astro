@@ -41,7 +41,7 @@ function App() {
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", textAlign: "center" }}>
-      <h1>City Temperatures (OpenWeatherMap)</h1>
+      <h1>City Temperatures</h1>
       {weatherData.length > 0 ? (
         <WeatherChart data={weatherData} />
       ) : (
